@@ -1,0 +1,114 @@
+import pandas as pd
+import plotly.express as px
+from bs4 import BeautifulSoup
+
+# ---------------------------
+# STEP 1: Prepare the Dataset
+# ---------------------------
+df_protests = pd.DataFrame({
+    "Protest Name": [
+        "Greensboro Sit-ins", "March on Washington", "March on the Pentagon",
+        "1968 DNC Protests", "May Day 1971", "Occupy Wall Street",
+        "BLM Protests", "Campus Protests 2020–2024"
+    ],
+    "Start Date": pd.to_datetime([
+        "1960-02-01", "1963-08-28", "1967-10-21",
+        "1968-08-23", "1971-05-01", "2011-09-17",
+        "2020-05-26", "2020-10-01"
+    ]),
+    "End Date": pd.to_datetime([
+        "1960-03-01", "1963-08-28", "1967-10-21",
+        "1968-08-29", "1971-05-05", "2012-03-01",
+        "2021-06-01", "2024-06-01"
+    ]),
+    "Location": [
+        "Greensboro, NC", "Washington, D.C.", "Pentagon, VA",
+        "Chicago, IL", "Washington, D.C.", "New York City, NY",
+        "United States (Nationwide)", "Universities (Nationwide)"
+    ],
+    "Estimated Attendance": [
+        70000, 250000, 100000,
+        10000, 40000, 10000,
+        500000, 30000
+    ],
+    "Impact Type (0=Social, 1=Strategic)": [
+        0.8, 1.0, 0.6,
+        0.7, 0.6, 0.5,
+        0.8, 0.7
+    ],
+    "Policy Outcome": [
+        "Catalyzed sit-in movement; desegregation of lunch counters",
+        "Civil Rights Act of 1964 passage influenced",
+        "Helped shift public opinion against Vietnam War",
+        "Led to Democratic Party reforms and increased protest visibility",
+        "Highlighted police tactics; influenced future anti-war movements",
+        "Introduced income inequality discourse; no direct legislation",
+        "Sparked state/local reforms; DOJ investigations; funding reallocation",
+        "Still ongoing; calls for divestment, academic accountability"
+    ]
+})
+
+# --------------------------------
+# STEP 2: Create the Plotly Figure
+# --------------------------------
+fig = px.scatter(
+    df_protests,
+    x="Start Date",
+    y="Impact Type (0=Social, 1=Strategic)",
+    size="Estimated Attendance",
+    color="Impact Type (0=Social, 1=Strategic)",
+    hover_name="Protest Name",
+    hover_data=["Location", "Estimated Attendance"],
+    trendline="ols",
+    title="U.S. Major Protests (1960–2025) with Trendline",
+    labels={"Impact Type (0=Social, 1=Strategic)": "Social → Strategic Impact"},
+    height=700
+)
+
+fig.update_layout(
+    autosize=True,
+    margin=dict(l=10, r=10, t=50, b=10),
+    legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+    font=dict(size=14),
+    title_font=dict(size=18),
+)
+
+# -----------------------------------
+# STEP 3: Export the HTML to index.html
+# -----------------------------------
+html_path = "index.html"
+fig.write_html(html_path, full_html=True, include_plotlyjs='cdn')
+
+# -----------------------------------
+# STEP 4: Insert Narrative Annotation
+# -----------------------------------
+narrative_html = """
+<div style="font-family: Arial, sans-serif; margin-bottom: 20px;">
+  <h2>How to Read This Visualization</h2>
+  <p>This interactive timeline highlights major U.S. protests from 1960 to 2025. Each bubble represents a protest, with its size based on estimated attendance.</p>
+  <ul>
+    <li><strong>X-axis (Date):</strong> The start date of the protest.</li>
+    <li><strong>Y-axis (Impact Type):</strong> A scale from 0 (primarily social impact) to 1 (primarily strategic/political impact).</li>
+    <li><strong>Bubble Size:</strong> Represents estimated number of protestors.</li>
+    <li><strong>Hover:</strong> View the protest's name, location, date range, number of attendees, and any known policy outcomes.</li>
+    <li><strong>Trendline:</strong> The gray line reflects the overall shift in protest impact over time, based on available data.</li>
+  </ul>
+  <h3>What Does Social vs Strategic Impact Mean?</h3>
+  <p><strong>Social impact</strong> protests spark cultural shifts, build community power, or raise awareness, while <strong>strategic impact</strong> protests aim for concrete political outcomes—like legislation, institutional reform, or policy changes. Many protests do both.</p>
+</div>
+"""
+
+# Insert narrative into the HTML body
+with open(html_path, "r", encoding="utf-8") as file:
+    soup = BeautifulSoup(file, "html.parser")
+
+body = soup.find("body")
+if body:
+    first_div = body.find("div")
+    if first_div:
+        first_div.insert_before(BeautifulSoup(narrative_html, "html.parser"))
+
+with open(html_path, "w", encoding="utf-8") as file:
+    file.write(str(soup))
+
+print("✅ index.html with annotations and trendline is ready for GitHub Pages.")
